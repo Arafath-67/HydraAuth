@@ -2,36 +2,251 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>secure-login-lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HydraAuth — console</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
-  input, button { display: block; width: 100%; margin: 8px 0; padding: 8px; box-sizing: border-box; }
-  pre { background: #f2f2f2; padding: 12px; white-space: pre-wrap; word-break: break-all; }
+  :root {
+    --bg: #10161d;
+    --panel: #161e27;
+    --panel-alt: #1a2330;
+    --border: #2a3542;
+    --text: #e8edf3;
+    --text-muted: #8d9aa8;
+    --accent: #e8a23d;
+    --accent-strong: #f3b65a;
+    --success: #4fb286;
+    --danger: #e2594f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    max-width: 1080px;
+    margin: 24px auto;
+    padding: 0 24px 40px;
+  }
+
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  section.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .group + .group {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .group h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .field { margin-bottom: 10px; }
+
+  input {
+    width: 100%;
+    padding: 9px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  input:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  button {
+    width: 100%;
+    padding: 9px 10px;
+    margin-top: 4px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #1a1304;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  button:hover { background: var(--accent-strong); }
+
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .log-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+  }
+
+  .log-panel h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #log:empty::before {
+    content: "No requests yet — try Register or Login.";
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .entry {
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    animation: enter 0.15s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry { animation: none; }
+  }
+
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry.ok { border-left-color: var(--success); }
+  .entry.err { border-left-color: var(--danger); }
+
+  .entry-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    margin-bottom: 6px;
+  }
+
+  .method { color: var(--text-muted); }
+  .path { color: var(--text); }
+  .status { margin-left: auto; font-weight: 600; }
+  .entry.ok .status { color: var(--success); }
+  .entry.err .status { color: var(--danger); }
+  .time { color: var(--text-muted); font-size: 11px; }
+
+  pre {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
 </head>
 <body>
-  <h2>secure-login-lab</h2>
+  <header>
+    <h1>HydraAuth</h1>
+    <p>Local auth testing console — every request and response below.</p>
+  </header>
 
-  <h3>Register</h3>
-  <input id="reg-user" placeholder="username" />
-  <input id="reg-pass" placeholder="password (10+ chars)" type="password" />
-  <button id="btn-register">Register</button>
+  <main>
+    <section class="panel">
+      <div class="group">
+        <h2>Account</h2>
+        <div class="field">
+          <label for="reg-user">Username</label>
+          <input id="reg-user" placeholder="e.g. alice" />
+        </div>
+        <div class="field">
+          <label for="reg-pass">Password</label>
+          <input id="reg-pass" type="password" placeholder="10+ characters" />
+        </div>
+        <button id="btn-register">Register</button>
+      </div>
 
-  <h3>Login</h3>
-  <input id="login-user" placeholder="username" />
-  <input id="login-pass" placeholder="password" type="password" />
-  <button id="btn-login">Login</button>
+      <div class="group">
+        <h2>Login</h2>
+        <div class="field">
+          <label for="login-user">Username</label>
+          <input id="login-user" placeholder="e.g. alice" />
+        </div>
+        <div class="field">
+          <label for="login-pass">Password</label>
+          <input id="login-pass" type="password" />
+        </div>
+        <button id="btn-login">Login</button>
+      </div>
 
-  <h3>Protected</h3>
-  <button id="btn-secret">GET /secret</button>
-  <button id="btn-refresh">POST /auth/refresh</button>
-  <button id="btn-logout">Logout</button>
+      <div class="group">
+        <h2>Session</h2>
+        <button id="btn-secret" class="secondary">GET /secret</button>
+        <button id="btn-refresh" class="secondary">POST /auth/refresh</button>
+        <button id="btn-logout" class="secondary">Logout</button>
+      </div>
+    </section>
 
-  <pre id="out"></pre>
+    <section class="panel log-panel">
+      <h2>Activity log</h2>
+      <div id="log"></div>
+    </section>
+  </main>
 
-  <!-- External file, not inline -- works cleanly with helmet's default CSP
-       (script-src 'self'), which blocks inline <script> and inline
-       onclick="" handlers by design. -->
   <script src="/app.js"></script>
 </body>
 </html>

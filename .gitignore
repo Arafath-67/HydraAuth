@@ -1,0 +1,12 @@
+# Secrets — never commit the real .env, only .env.example
+.env
+
+# Dependencies — reinstalled via npm install, no need to commit
+node_modules/
+
+# Local JSON-file "database" — this is local test data, not source code
+data/db.json
+
+# OS/editor noise
+.DS_Store
+*.log

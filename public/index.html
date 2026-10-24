@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>secure-login-lab</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+  input, button { display: block; width: 100%; margin: 8px 0; padding: 8px; box-sizing: border-box; }
+  pre { background: #f2f2f2; padding: 12px; white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+  <h2>secure-login-lab</h2>
+
+  <h3>Register</h3>
+  <input id="reg-user" placeholder="username" />
+  <input id="reg-pass" placeholder="password (10+ chars)" type="password" />
+  <button onclick="register()">Register</button>
+
+  <h3>Login</h3>
+  <input id="login-user" placeholder="username" />
+  <input id="login-pass" placeholder="password" type="password" />
+  <button onclick="login()">Login</button>
+
+  <h3>Protected</h3>
+  <button onclick="getSecret()">GET /secret</button>
+  <button onclick="refresh()">POST /auth/refresh</button>
+  <button onclick="logout()">Logout</button>
+
+  <pre id="out"></pre>
+
+<script>
+  // Access token kept only in memory — never localStorage/sessionStorage,
+  // so a successful XSS can't trivially read it off disk.
+  let accessToken = null;
+
+  function out(x) { document.getElementById("out").textContent =
+    typeof x === "string" ? x : JSON.stringify(x, null, 2); }
+
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return m ? m[2] : null;
+  }
+
+  async function register() {
+    const username = document.getElementById("reg-user").value;
+    const password = document.getElementById("reg-pass").value;
+    const r = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    out(await r.json());
+  }
+
+  async function login() {
+    const username = document.getElementById("login-user").value;
+    const password = document.getElementById("login-pass").value;
+    const r = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await r.json();
+    if (data.accessToken) accessToken = data.accessToken;
+    out(data);
+  }
+
+  async function getSecret() {
+    const r = await fetch("/secret", {
+      headers: { Authorization: "Bearer " + accessToken },
+    });
+    out(await r.json());
+  }
+
+  async function refresh() {
+    const r = await fetch("/auth/refresh", {
+      method: "POST",
+      headers: { "X-CSRF-Token": getCookie("csrf_token") || "" },
+    });
+    const data = await r.json();
+    if (data.accessToken) accessToken = data.accessToken;
+    out(data);
+  }
+
+  async function logout() {
+    const r = await fetch("/auth/logout", {
+      method: "POST",
+      headers: { "X-CSRF-Token": getCookie("csrf_token") || "" },
+    });
+    accessToken = null;
+    out(await r.json());
+  }
+</script>
+</body>
+</html>
